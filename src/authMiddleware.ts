@@ -8,8 +8,7 @@ declare global {
   namespace Express {
     interface Request {
       user?: {
-        userId: number;
-        userUuid: string | null;
+        userUuid: string;
         roles: RoleValue[];
       };
     }
@@ -20,18 +19,6 @@ function headerString(req: Request, name: string): string | undefined {
   const v = req.headers[name.toLowerCase()];
   if (Array.isArray(v)) return v[0];
   return typeof v === "string" ? v : undefined;
-}
-
-function parseXUserId(
-  raw: string,
-): { kind: "uuid"; value: string } | { kind: "userId"; userId: number } | null {
-  const t = raw.trim();
-  if (isUuid(t)) return { kind: "uuid", value: t };
-  if (/^\d+$/.test(t)) {
-    const userId = parseInt(t, 10);
-    if (userId > 0) return { kind: "userId", userId };
-  }
-  return null;
 }
 
 function parseRoles(raw: string): RoleValue[] {
@@ -54,7 +41,7 @@ function parseRoles(raw: string): RoleValue[] {
 export const authMiddleware = async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ) => {
   try {
     const headerUserId = headerString(req, "x-user-id");
@@ -74,11 +61,11 @@ export const authMiddleware = async (
       });
     }
 
-    const idParsed = parseXUserId(headerUserId);
-    if (!idParsed) {
+    const userUuid = headerUserId.trim();
+    if (!isUuid(userUuid)) {
       return res.status(400).json({
         error: "Bad Request",
-        message: "X-User-Id must be a valid UUID or a positive integer userId",
+        message: "X-User-Id must be a valid UUID",
       });
     }
 
@@ -93,16 +80,10 @@ export const authMiddleware = async (
       });
     }
 
-    const profile =
-      idParsed.kind === "uuid"
-        ? await prisma.userProfile.findUnique({
-            where: { userUuid: idParsed.value },
-            select: { userId: true, userUuid: true, roles: true },
-          })
-        : await prisma.userProfile.findUnique({
-            where: { userId: idParsed.userId },
-            select: { userId: true, userUuid: true, roles: true },
-          });
+    const profile = await prisma.userProfile.findUnique({
+      where: { userUuid },
+      select: { userUuid: true, roles: true },
+    });
 
     if (!profile) {
       return res.status(401).json({
@@ -111,6 +92,7 @@ export const authMiddleware = async (
       });
     }
 
+    // Проверяем, что X-Roles совпадают с ролями из БД (порядок не важен)
     const allowed = new Set<string>(ALL_ROLES);
     const storedRoles: RoleValue[] = [];
     for (const r of profile.roles) {
@@ -132,8 +114,7 @@ export const authMiddleware = async (
     }
 
     req.user = {
-      userId: profile.userId,
-      userUuid: profile.userUuid ?? null,
+      userUuid: profile.userUuid,
       roles: storedRoles,
     };
     next();

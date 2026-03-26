@@ -3,8 +3,7 @@ import type { RoleValue } from "./role";
 export type UserProfileStatus = "ACTIVE" | "INACTIVE" | "BANNED" | "BUSY";
 
 export interface UserProfile {
-  userId: number;
-  userUuid?: string | null;
+  userUuid: string;
   roles: RoleValue[];
   stack: string[];
   specialization: string[];
