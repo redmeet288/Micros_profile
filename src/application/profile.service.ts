@@ -60,6 +60,8 @@ export class ProfileService {
             "username",
             "email",
             "fullName",
+            "telegramUsername",
+            "phone",
             "bio",
             "avatarUrl",
             "location",

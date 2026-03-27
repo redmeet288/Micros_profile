@@ -10,6 +10,8 @@ datasource db {
 model UserProfile {
   userUuid         String    @id @db.Uuid
   telegramId       Int?      @unique
+  telegramUsername String?
+  phone            String?
   username         String?   @unique
   email            String?   @unique
   fullName         String?

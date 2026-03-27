@@ -246,6 +246,8 @@ export class ProfileController {
                 "username",
                 "email",
                 "fullName",
+                "telegramUsername",
+                "phone",
                 "bio",
                 "avatarUrl",
                 "location",
