@@ -20,15 +20,17 @@ export class ProfileController {
 
   async getContact(req: Request, res: Response) {
     try {
-      const userUuid = req.user?.userUuid;
-      if (!userUuid) {
+      const raw = req.params.userUuid;
+      const targetUserUuid = Array.isArray(raw) ? raw[0] : raw;
+
+      if (!targetUserUuid) {
         return res.status(401).json({
           error: "Unauthorized",
           message: "User not authenticated",
         });
       }
 
-      const profile = await this.service.getProfileByUserUuid(userUuid);
+      const profile = await this.service.getProfileByUserUuid(targetUserUuid);
       if (!profile) {
         return res.status(404).json({
           error: "Not Found",
@@ -37,7 +39,7 @@ export class ProfileController {
       }
 
       res.json({
-        uuid: profile.userUuid,
+        username: profile.username,
         phone: profile.phone,
         email: profile.email,
         telegramUsername: profile.telegramUsername,
